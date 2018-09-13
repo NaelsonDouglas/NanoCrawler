@@ -2,13 +2,47 @@
 
 #JSON.json(Dict("action"=>"block_count"))
 #Gets a JSON as input
-function rpc(_body::String,server="http://yapraiwallet.space:5523/api")	
+function rpc(_body::String;server::String="http://yapraiwallet.space:5523/api")	
 	r = HTTP.request("POST", server, [], _body)
 	return JSON.parse(String(r.body))
 end
 
+
+
+
+
 #Gets a dictionary as input
-function rpc(_body::Dict{String,String},server="http://yapraiwallet.space:5523/api")	
-	return rpc(JSON.json(_body))
+"Calls a Nano roc command. You only have to specify the body as a Dictionary
+example: rpc(Dict(\"action\" : \"block_count\"))"
+function rpc(_body::Dict{String,String},_server::String="http://yapraiwallet.space:5523/api")	
+	return rpc(JSON.json(_body);server=_server)
+end
+
+
+"Returns the history of wallet
+
+count defines the amount of transactions to return (default is 1)
+"
+function history(wallet::String,count::Union{Int,String}=1;_server::String="http://yapraiwallet.space:5523/api")	
+	body = Dict("action"=>"account_history","account"=>wallet,"count"=>string(count))
+	return rpc(JSON.json(body);server=_server)["history"]
+end
+
+"Gets the last 'count' send operations of 'wallet'"
+function history_send(wallet::String,count::Union{Int,String}=1;server::String="http://yapraiwallet.space:5523/api")
+	h = history(wallet,count;_server=server)
+	filter!(h) do x
+		x["type"] == "send"
+	end
+	return h
+end
+
+"Gets the last 'count' receive operations of 'wallet'"
+function history_receive(wallet::String,count::Union{Int,String}=1;server::String="http://yapraiwallet.space:5523/api")
+	h = history(wallet,count;_server=server)
+	filter!(h) do x
+		x["type"] == "receive"
+	end
+	return h
 end
 
