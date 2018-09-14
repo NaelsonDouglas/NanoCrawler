@@ -1,4 +1,4 @@
-#using HTTP, JSON, LightGraphs, GraphPlot
+using HTTP, JSON,Graphs GraphPlot
 
 #JSON.json(Dict("action"=>"block_count"))
 #Gets a JSON as input
