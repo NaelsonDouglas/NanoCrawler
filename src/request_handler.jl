@@ -1,7 +1,9 @@
-#using HTTP, JSON
+#using HTTP, JSON, LightGraphs, GraphPlot
 
 #JSON.json(Dict("action"=>"block_count"))
 #Gets a JSON as input
+
+ac = "xrb_3m5aqg68j31o4izfm6a445zywc8ww667tpb5drjzyhrf3js9ug9mxp8opo7r"
 function rpc(_body::String;server::String="http://yapraiwallet.space:5523/api")	
 	r = HTTP.request("POST", server, [], _body)
 	return JSON.parse(String(r.body))
@@ -29,7 +31,7 @@ function history(wallet::String,count::Union{Int,String}=1;_server::String="http
 end
 
 "Gets the last 'count' send operations of 'wallet'"
-function history_send(wallet::String,count::Union{Int,String}=1;server::String="http://yapraiwallet.space:5523/api")
+function history_send(wallet::String,count::Int=1;server::String="http://yapraiwallet.space:5523/api")
 	h = history(wallet,count;_server=server)
 	filter!(h) do x
 		x["type"] == "send"
@@ -44,5 +46,32 @@ function history_receive(wallet::String,count::Union{Int,String}=1;server::Strin
 		x["type"] == "receive"
 	end
 	return h
+end
+
+
+function make_graph(account::String,count::Int=1)
+	h = history_send(account,count)
+	g = simple_graph(0)
+	
+	amount_vertices = 1
+	vertices_map = Dict{String,Int}() #TODO use an enumeration instead of a dictionary
+	vertices_map[account] = amount_vertices
+
+	genesis_vertice = ExVertex(1,account)
+	add_vertex!(g,genesis_vertice)
+
+	
+	for t in h		
+		current_target = t["account"]
+
+		if !haskey(vertices_map,current_target)
+			amount_vertices +=1
+			v = ExVertex(amount_vertices,current_target)
+			add_vertex!(g,v)	
+			vertices_map[current_target] = amount_vertices
+			add_edge!(g,1,vertices_map[current_target])
+		end
+	end	
+	plot(g)
 end
 
